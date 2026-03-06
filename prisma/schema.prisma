@@ -20,25 +20,34 @@ model User {
 model Category {
   id        String   @id @default(uuid())
   name      String
-  type      String
-  userId    String
-  user      User @relation(fields: [userId], references: [id])
+  type      CategoryType
+  isDefault Boolean  @default(false)
+
+  // null = system category
+  userId    String?
+  user      User? @relation(fields: [userId], references: [id])
 
   transactions Transaction[]
 }
 
 model Transaction {
   id          String   @id @default(uuid())
-  amount      Float
-  type        String
+  amount      Decimal  @db.Decimal(12,2)
   description String?
   date        DateTime
+
+  type        CategoryType
 
   userId      String
   user        User @relation(fields: [userId], references: [id])
 
-  categoryId  String
-  category    Category @relation(fields: [categoryId], references: [id])
+  categoryId  String?
+  category    Category? @relation(fields: [categoryId], references: [id])
 
   createdAt   DateTime @default(now())
+}
+
+enum CategoryType {
+  income
+  expense
 }
