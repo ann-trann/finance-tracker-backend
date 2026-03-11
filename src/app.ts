@@ -5,6 +5,7 @@ import cors from "cors"
 import authRoutes from "./routes/authRoutes"
 import transactionRoutes from "./routes/transactionRoutes"
 import categoryRoutes from "./routes/categoryRoutes"
+import walletRoutes from "./routes/walletRoutes"
 
 const app = express()
 
@@ -29,5 +30,8 @@ app.use("/api", transactionRoutes)
 
 // Category-related routes
 app.use("/api", categoryRoutes)
+
+// Category-related routes
+app.use("/api", walletRoutes)
 
 export default app
