@@ -1,4 +1,5 @@
 import { Request, Response } from "express"
+import { Prisma } from "@prisma/client"
 import prisma from "../prisma/client"
 
 /**
@@ -44,7 +45,7 @@ export const getWallets = async (req: Request, res: Response) => {
  */
 export const createWallet = async (req: Request, res: Response) => {
   try {
-    const { name, balance } = req.body
+    const { name, initialBalance } = req.body
     const userId = (req as any).user.userId
 
     // Validation
@@ -54,11 +55,14 @@ export const createWallet = async (req: Request, res: Response) => {
       })
     }
 
+    const startBalance = initialBalance ? Number(initialBalance) : 0
+
     // Create wallet
     const wallet = await prisma.wallet.create({
       data: {
         name,
-        balance: balance ? Number(balance) : 0,
+        initialBalance: startBalance,
+        balance: startBalance,
         userId
       }
     })
@@ -144,7 +148,7 @@ export const updateWallet = async (req: Request, res: Response) => {
     const id = req.params.id as string
     const userId = (req as any).user.userId
 
-    const { name, balance } = req.body
+    const { name, initialBalance  } = req.body
 
     // Check wallet ownership
     const wallet = await prisma.wallet.findUnique({
@@ -157,12 +161,27 @@ export const updateWallet = async (req: Request, res: Response) => {
       })
     }
 
-    // Update wallet
+    let newBalance = wallet.balance
+    let newInitial = wallet.initialBalance
+
+    if (initialBalance !== undefined) {
+
+      const oldInitial = Number(wallet.initialBalance)
+      const oldBalance = Number(wallet.balance)
+      const newInitialValue = Number(initialBalance)
+
+      const calculatedBalance = oldBalance - oldInitial + newInitialValue
+
+      newBalance = new Prisma.Decimal(calculatedBalance)
+      newInitial = new Prisma.Decimal(newInitialValue)
+    }
+
     const updatedWallet = await prisma.wallet.update({
       where: { id },
       data: {
-        name,
-        balance: balance !== undefined ? Number(balance) : undefined
+        name: name ?? wallet.name,
+        initialBalance: newInitial,
+        balance: newBalance
       }
     })
 
@@ -179,7 +198,7 @@ export const updateWallet = async (req: Request, res: Response) => {
  * =====================================
  * DELETE /wallets/:id
  * =====================================
- * Delete wallet
+ * Delete wallet and its transactions
  */
 export const deleteWallet = async (req: Request, res: Response) => {
   try {
@@ -197,25 +216,23 @@ export const deleteWallet = async (req: Request, res: Response) => {
       })
     }
 
-    // Prevent deleting wallet with transactions
-    const transactionCount = await prisma.transaction.count({
-      where: {
-        walletId: id
-      }
-    })
+    // Delete transactions + wallet in a transaction
+    await prisma.$transaction([
 
-    if (transactionCount > 0) {
-      return res.status(400).json({
-        message: "Cannot delete wallet with transactions"
+      prisma.transaction.deleteMany({
+        where: {
+          walletId: id
+        }
+      }),
+
+      prisma.wallet.delete({
+        where: { id }
       })
-    }
 
-    await prisma.wallet.delete({
-      where: { id }
-    })
+    ])
 
     res.json({
-      message: "Wallet deleted"
+      message: "Wallet and its transactions deleted"
     })
 
   } catch (error) {

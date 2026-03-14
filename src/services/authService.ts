@@ -30,11 +30,22 @@ export const registerUser = async (email: string, password: string) => {
   // The number 10 is the salt rounds (security level)
   const hashedPassword = await bcrypt.hash(password, 10)
 
-  // Create a new user in the database
+  // create user + default wallet
   const user = await prisma.user.create({
     data: {
       email,
-      password: hashedPassword
+      password: hashedPassword,
+
+      wallets: {
+        create: {
+          name: "Cash",
+          initialBalance: 0,
+          balance: 0
+        }
+      }
+    },
+    include: {
+      wallets: true
     }
   })
 
@@ -81,4 +92,35 @@ export const loginUser = async (email: string, password: string) => {
 
   // Return token and user information
   return { token, user }
+}
+
+
+
+export const deleteUserAccount = async (userId: string) => {
+
+  await prisma.$transaction([
+
+    // delete transactions
+    prisma.transaction.deleteMany({
+      where: { userId }
+    }),
+
+    // delete wallets
+    prisma.wallet.deleteMany({
+      where: { userId }
+    }),
+
+    // delete user custom categories
+    prisma.category.deleteMany({
+      where: { userId }
+    }),
+
+    // delete user
+    prisma.user.delete({
+      where: { id: userId }
+    })
+
+  ])
+
+  return { message: "Account deleted successfully" }
 }

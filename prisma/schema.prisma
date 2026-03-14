@@ -22,6 +22,7 @@ model Category {
   id        String   @id @default(uuid())
   name      String
   type      CategoryType
+  icon      String?
   isDefault Boolean  @default(false)
 
   userId    String?
@@ -60,6 +61,8 @@ model Wallet {
   id        String   @id @default(uuid())
   name      String
   balance   Decimal  @db.Decimal(12,2) @default(0)
+
+  initialBalance Decimal @db.Decimal(12,2) @default(0)
 
   userId    String
   user      User @relation(fields: [userId], references: [id])

@@ -17,27 +17,37 @@ export const getTransactions = async (req: Request, res: Response) => {
   try {
     // Get userId from JWT token
     const userId = (req as any).user.userId
-    const { month, type } = req.query
+    const { month, type, sortAmount } = req.query
 
     // Base filter: only get transactions of the current user
     const where: any = { userId }
 
-    // Optional filter by transaction type
+    // Filter by transaction type
     if (type) {
       where.type = type
     }
 
-    // Optional filter by month
+    // Filter by month
     if (month) {
       const start = new Date(`2026-${month}-01`)
       const end = new Date(start)
       end.setMonth(end.getMonth() + 1)
 
-      // Get transactions within the selected month
       where.date = {
         gte: start,
         lt: end
       }
+    }
+
+    // Sort logic
+    let orderBy: any = { date: "desc" } // default
+
+    if (sortAmount === "asc") {
+      orderBy = { amount: "asc" }
+    }
+
+    if (sortAmount === "desc") {
+      orderBy = { amount: "desc" }
     }
 
     // Query transactions from database
@@ -48,7 +58,7 @@ export const getTransactions = async (req: Request, res: Response) => {
         category: true,
         wallet: true
       },
-      orderBy: { date: "desc" } // newest transactions first
+      orderBy
     })
 
     res.json(transactions)

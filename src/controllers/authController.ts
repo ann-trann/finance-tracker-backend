@@ -1,5 +1,5 @@
 import { Request, Response } from "express"
-import { registerUser, loginUser } from "../services/authService"
+import { registerUser, loginUser, deleteUserAccount } from "../services/authService"
 
 // Handle user registration
 export const register = async (req: Request, res: Response) => {
@@ -35,5 +35,24 @@ export const login = async (req: Request, res: Response) => {
   } catch (error: any) {
     // Return error if login fails
     res.status(401).json({ error: error.message })
+  }
+}
+
+// Delete account
+export const deleteAccount = async (req: Request, res: Response) => {
+  try {
+
+    const userId = (req as any).user.userId
+
+    const result = await deleteUserAccount(userId)
+
+    res.json(result)
+
+  } catch (error: any) {
+
+    res.status(500).json({
+      error: error.message
+    })
+
   }
 }

@@ -24,33 +24,42 @@ async function main() {
 
   console.log("User created:", user.email)
 
-/*
+  /*
 =================
 WALLETS
 =================
 */
 
-  const cashWallet = await prisma.wallet.upsert({
-    where: { id: "wallet-cash" },
-    update: {},
-    create: {
-      id: "wallet-cash",
-      name: "Cash",
-      balance: new Prisma.Decimal(500),
-      userId: user.id
-    }
-  })
+const cashInitial = new Prisma.Decimal(500)
+const bankInitial = new Prisma.Decimal(2000)
 
-  const bankWallet = await prisma.wallet.upsert({
-    where: { id: "wallet-bank" },
-    update: {},
-    create: {
-      id: "wallet-bank",
-      name: "Bank",
-      balance: new Prisma.Decimal(2000),
-      userId: user.id
-    }
-  })
+const cashWallet = await prisma.wallet.upsert({
+  where: { id: "wallet-cash" },
+  update: {},
+  create: {
+    id: "wallet-cash",
+    name: "Tiền mặt",
+
+    initialBalance: cashInitial,
+    balance: cashInitial,
+
+    userId: user.id
+  }
+})
+
+const bankWallet = await prisma.wallet.upsert({
+  where: { id: "wallet-bank" },
+  update: {},
+  create: {
+    id: "wallet-bank",
+    name: "Ngân hàng",
+
+    initialBalance: bankInitial,
+    balance: bankInitial,
+
+    userId: user.id
+  }
+})
 
 console.log("Wallets created:", cashWallet.name, bankWallet.name)
 
@@ -60,30 +69,20 @@ console.log("Wallets created:", cashWallet.name, bankWallet.name)
   =================
   */
 
-  const createParent = async (name: string, type: "expense" | "income") => {
-    return prisma.category.create({
-      data: {
-        name,
-        type,
-        isDefault: true
-      }
+  const createParent = (name: string, type: "expense" | "income", icon: string) =>
+    prisma.category.create({
+      data: { name, type, icon, isDefault: true }
     })
-  }
 
-  const createChild = async (
+  const createChild = (
     name: string,
     type: "expense" | "income",
+    icon: string,
     parentId: string
-  ) => {
-    return prisma.category.create({
-      data: {
-        name,
-        type,
-        isDefault: true,
-        parentId
-      }
+  ) =>
+    prisma.category.create({
+      data: { name, type, icon, isDefault: true, parentId }
     })
-  }
 
   /*
   =================
@@ -91,49 +90,48 @@ console.log("Wallets created:", cashWallet.name, bankWallet.name)
   =================
   */
 
-  const food = await createParent("Ăn uống", "expense")
+  await createParent("Ăn uống",              "expense", "Utensils")
+  await createParent("Bảo hiểm",             "expense", "Shield")
+  await createParent("Chi phí khác",         "expense", "MoreHorizontal")
+  await createParent("Đầu tư",               "expense", "TrendingUp")
 
-  await createParent("Bảo hiểm", "expense")
-  await createParent("Chi phí khác", "expense")
-  await createParent("Đầu tư", "expense")
+  const transport = await createParent("Di chuyển", "expense", "Car")
+  await createChild("Bảo dưỡng xe", "expense", "Wrench", transport.id)
 
-  const transport = await createParent("Di chuyển", "expense")
-  await createChild("Bảo dưỡng xe", "expense", transport.id)
+  const family = await createParent("Gia đình", "expense", "Home")
+  await createChild("Dịch vụ gia đình",    "expense", "ConciergeBell", family.id)
+  await createChild("Sửa & trang trí nhà", "expense", "Hammer",        family.id)
+  await createChild("Vật nuôi",            "expense", "PawPrint",      family.id)
 
-  const family = await createParent("Gia đình", "expense")
-  await createChild("Dịch vụ gia đình", "expense", family.id)
-  await createChild("Sửa & trang trí nhà", "expense", family.id)
-  await createChild("Vật nuôi", "expense", family.id)
+  const entertainment = await createParent("Giải trí", "expense", "Gamepad2")
+  await createChild("Dịch vụ trực tuyến", "expense", "Tv",       entertainment.id)
+  await createChild("Vui - chơi",         "expense", "Laugh",    entertainment.id)
 
-  const entertainment = await createParent("Giải trí", "expense")
-  await createChild("Dịch vụ trực tuyến", "expense", entertainment.id)
-  await createChild("Vui - chơi", "expense", entertainment.id)
+  await createParent("Giáo dục", "expense", "BookOpen")
 
-  await createParent("Giáo dục", "expense")
+  const bills = await createParent("Hóa đơn & Tiện ích", "expense", "FileText")
+  await createChild("Hóa đơn điện",          "expense", "Zap",        bills.id)
+  await createChild("Hóa đơn điện thoại",    "expense", "Phone",      bills.id)
+  await createChild("Hóa đơn gas",           "expense", "Flame",      bills.id)
+  await createChild("Hóa đơn internet",      "expense", "Wifi",       bills.id)
+  await createChild("Hóa đơn nước",          "expense", "Droplets",   bills.id)
+  await createChild("Hóa đơn tiện ích khác", "expense", "Receipt",    bills.id)
+  await createChild("Hóa đơn TV",            "expense", "Monitor",    bills.id)
+  await createChild("Thuê nhà",              "expense", "Building2",  bills.id)
 
-  const bills = await createParent("Hóa đơn & Tiện ích", "expense")
-  await createChild("Hóa đơn điện", "expense", bills.id)
-  await createChild("Hóa đơn điện thoại", "expense", bills.id)
-  await createChild("Hóa đơn gas", "expense", bills.id)
-  await createChild("Hóa đơn internet", "expense", bills.id)
-  await createChild("Hóa đơn nước", "expense", bills.id)
-  await createChild("Hóa đơn tiện ích khác", "expense", bills.id)
-  await createChild("Hóa đơn TV", "expense", bills.id)
-  await createChild("Thuê nhà", "expense", bills.id)
+  const shopping = await createParent("Mua sắm", "expense", "ShoppingBag")
+  await createChild("Đồ dùng cá nhân", "expense", "Backpack",    shopping.id)
+  await createChild("Đồ gia dụng",     "expense", "Sofa",        shopping.id)
+  await createChild("Làm đẹp",        "expense", "Sparkles",    shopping.id)
 
-  const shopping = await createParent("Mua sắm", "expense")
-  await createChild("Đồ dùng cá nhân", "expense", shopping.id)
-  await createChild("Đồ gia dụng", "expense", shopping.id)
-  await createChild("Làm đẹp", "expense", shopping.id)
+  await createParent("Quà tặng & quyên góp", "expense", "Gift")
 
-  await createParent("Quà tặng & quyên góp", "expense")
+  const health = await createParent("Sức khỏe", "expense", "HeartPulse")
+  await createChild("Khám sức khỏe",    "expense", "Stethoscope", health.id)
+  await createChild("Thể dục thể thao", "expense", "Dumbbell",    health.id)
 
-  const health = await createParent("Sức khỏe", "expense")
-  await createChild("Khám sức khỏe", "expense", health.id)
-  await createChild("Thể dục thể thao", "expense", health.id)
-
-  await createParent("Tiền chuyển đi", "expense")
-  await createParent("Trả lãi", "expense")
+  await createParent("Tiền chuyển đi", "expense", "ArrowUpRight")
+  await createParent("Trả lãi",        "expense", "Percent")
 
   /*
   =================
@@ -143,10 +141,10 @@ console.log("Wallets created:", cashWallet.name, bankWallet.name)
 
   await prisma.category.createMany({
     data: [
-      { name: "Lương", type: "income", isDefault: true },
-      { name: "Thu lãi", type: "income", isDefault: true },
-      { name: "Thu nhập khác", type: "income", isDefault: true },
-      { name: "Tiền chuyển đến", type: "income", isDefault: true }
+      { name: "Lương",          type: "income", icon: "Wallet",      isDefault: true },
+      { name: "Thu lãi",        type: "income", icon: "PiggyBank",   isDefault: true },
+      { name: "Thu nhập khác",  type: "income", icon: "CirclePlus",  isDefault: true },
+      { name: "Tiền chuyển đến",type: "income", icon: "ArrowDownLeft", isDefault: true }
     ]
   })
 
@@ -158,10 +156,10 @@ console.log("Wallets created:", cashWallet.name, bankWallet.name)
 
   await prisma.category.createMany({
     data: [
-      { name: "Cho vay", type: "expense", isDefault: true },
-      { name: "Đi vay", type: "income", isDefault: true },
-      { name: "Thu nợ", type: "income", isDefault: true },
-      { name: "Trả nợ", type: "expense", isDefault: true }
+      { name: "Cho vay", type: "expense", icon: "HandCoins",  isDefault: true },
+      { name: "Đi vay",  type: "income",  icon: "Landmark",   isDefault: true },
+      { name: "Thu nợ",  type: "income",  icon: "ArrowDownToLine", isDefault: true },
+      { name: "Trả nợ",  type: "expense", icon: "ArrowUpToLine",   isDefault: true }
     ]
   })
 
@@ -228,7 +226,6 @@ console.log("Wallets created:", cashWallet.name, bankWallet.name)
         walletId: bankWallet.id,
         categoryId: getCategory("Thuê nhà")
       },
-
       {
         amount: 2000,
         type: "income",
@@ -268,7 +265,6 @@ console.log("Wallets created:", cashWallet.name, bankWallet.name)
         walletId: cashWallet.id,
         categoryId: getCategory("Làm đẹp")
       },
-
       {
         amount: 2000,
         type: "income",
@@ -293,7 +289,48 @@ console.log("Wallets created:", cashWallet.name, bankWallet.name)
 
   console.log("Transactions seeded")
 
+    console.log("Transactions seeded")
+
+  /*
+  =================
+  UPDATE WALLET BALANCE
+  =================
+  */
+
+  const wallets = await prisma.wallet.findMany({
+    include: {
+      transactions: true
+    }
+  })
+
+  for (const wallet of wallets) {
+
+    let balance = Number(wallet.initialBalance)
+
+    for (const t of wallet.transactions) {
+
+      if (t.type === "income") {
+        balance += Number(t.amount)
+      }
+
+      if (t.type === "expense") {
+        balance -= Number(t.amount)
+      }
+
+    }
+
+    await prisma.wallet.update({
+      where: { id: wallet.id },
+      data: {
+        balance: new Prisma.Decimal(balance)
+      }
+    })
+  }
+
+  console.log("Wallet balances updated")
 }
+
+
 
 main()
   .then(async () => {

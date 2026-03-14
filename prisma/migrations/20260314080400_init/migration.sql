@@ -16,6 +16,7 @@ CREATE TABLE "Category" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "type" "CategoryType" NOT NULL,
+    "icon" TEXT,
     "isDefault" BOOLEAN NOT NULL DEFAULT false,
     "userId" TEXT,
     "parentId" TEXT,
@@ -43,6 +44,7 @@ CREATE TABLE "Wallet" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "balance" DECIMAL(12,2) NOT NULL DEFAULT 0,
+    "initialBalance" DECIMAL(12,2) NOT NULL DEFAULT 0,
     "userId" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
