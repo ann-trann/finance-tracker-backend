@@ -212,40 +212,91 @@ export const deleteTransaction = async (req: Request, res: Response) => {
 export const getSummary = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user.userId
+    const { month } = req.query
 
-    // Calculate total income
+    let startDate: Date | undefined
+    let endDate: Date | undefined
+
+    // Filter by month
+    if (month) {
+      startDate = new Date(`${month}-01`)
+      endDate = new Date(startDate)
+      endDate.setMonth(endDate.getMonth() + 1)
+    }
+
+    const dateFilter = startDate
+      ? {
+          gte: startDate,
+          lt: endDate
+        }
+      : undefined
+
+    // Total income
     const income = await prisma.transaction.aggregate({
       where: {
         userId,
-        type: "income"
+        type: "income",
+        date: dateFilter
       },
-      _sum: {
-        amount: true
-      }
+      _sum: { amount: true }
     })
 
-    // Calculate total expense
+    // Total expense
     const expense = await prisma.transaction.aggregate({
       where: {
         userId,
-        type: "expense"
+        type: "expense",
+        date: dateFilter
       },
-      _sum: {
-        amount: true
-      }
+      _sum: { amount: true }
     })
 
     const totalIncome = Number(income._sum.amount) || 0
     const totalExpense = Number(expense._sum.amount) || 0
 
-    // Return financial summary
+    // Category statistics
+    const categoryStats = await prisma.transaction.groupBy({
+      by: ["categoryId"],
+      where: {
+        userId,
+        type: "expense",
+        date: dateFilter
+      },
+      _sum: {
+        amount: true
+      }
+    })
+
+    // Get category names
+    const categoryIds = categoryStats
+      .map(c => c.categoryId)
+      .filter(Boolean)
+
+    const categories = await prisma.category.findMany({
+      where: {
+        id: { in: categoryIds as string[] }
+      }
+    })
+
+    const categoryMap: any = {}
+    categories.forEach(c => {
+      categoryMap[c.id] = c.name
+    })
+
+    const categoryResult = categoryStats.map(c => ({
+      name: categoryMap[c.categoryId as string] || "Other",
+      amount: Number(c._sum.amount) || 0
+    }))
+
     res.json({
       income: totalIncome,
       expense: totalExpense,
-      balance: totalIncome - totalExpense
+      balance: totalIncome - totalExpense,
+      categories: categoryResult
     })
 
   } catch (error) {
+    console.error("Summary error:", error)
     res.status(500).json({ message: "Server error" })
   }
 }

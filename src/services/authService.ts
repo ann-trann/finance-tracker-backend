@@ -26,27 +26,20 @@ export const registerUser = async (email: string, password: string) => {
     throw new Error("Email already exists")
   }
 
-  // Hash the password using bcrypt
-  // The number 10 is the salt rounds (security level)
+  const name = email.split("@")[0]
   const hashedPassword = await bcrypt.hash(password, 10)
 
   // create user + default wallet
   const user = await prisma.user.create({
     data: {
       email,
+      name,
       password: hashedPassword,
-
       wallets: {
-        create: {
-          name: "Cash",
-          initialBalance: 0,
-          balance: 0
-        }
+        create: { name: "Cash", initialBalance: 0, balance: 0 }
       }
     },
-    include: {
-      wallets: true
-    }
+    include: { wallets: true }
   })
 
   // Return the created user

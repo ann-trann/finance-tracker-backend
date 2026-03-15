@@ -11,16 +11,19 @@ async function main() {
   =================
   */
 
-  const password = await bcrypt.hash("123456", 10)
+  const email = "demo@gmail.com"
+const name = email.split("@")[0]   // → "demo"
+const password = await bcrypt.hash("123456", 10)
 
-  const user = await prisma.user.upsert({
-    where: { email: "demo@gmail.com" },
-    update: {},
-    create: {
-      email: "demo@gmail.com",
-      password
-    }
-  })
+const user = await prisma.user.upsert({
+  where: { email },
+  update: {},
+  create: {
+    email,
+    name,
+    password
+  }
+})
 
   console.log("User created:", user.email)
 
@@ -28,10 +31,10 @@ async function main() {
 =================
 WALLETS
 =================
-*/
-
-const cashInitial = new Prisma.Decimal(500)
+*/const cashInitial = new Prisma.Decimal(500)
 const bankInitial = new Prisma.Decimal(2000)
+const savingInitial = new Prisma.Decimal(1000)
+const investmentInitial = new Prisma.Decimal(0)
 
 const cashWallet = await prisma.wallet.upsert({
   where: { id: "wallet-cash" },
@@ -39,10 +42,8 @@ const cashWallet = await prisma.wallet.upsert({
   create: {
     id: "wallet-cash",
     name: "Tiền mặt",
-
     initialBalance: cashInitial,
     balance: cashInitial,
-
     userId: user.id
   }
 })
@@ -53,15 +54,43 @@ const bankWallet = await prisma.wallet.upsert({
   create: {
     id: "wallet-bank",
     name: "Ngân hàng",
-
     initialBalance: bankInitial,
     balance: bankInitial,
-
     userId: user.id
   }
 })
 
-console.log("Wallets created:", cashWallet.name, bankWallet.name)
+const savingWallet = await prisma.wallet.upsert({
+  where: { id: "wallet-saving" },
+  update: {},
+  create: {
+    id: "wallet-saving",
+    name: "Tiết kiệm",
+    initialBalance: savingInitial,
+    balance: savingInitial,
+    userId: user.id
+  }
+})
+
+const investmentWallet = await prisma.wallet.upsert({
+  where: { id: "wallet-investment" },
+  update: {},
+  create: {
+    id: "wallet-investment",
+    name: "Đầu tư",
+    initialBalance: investmentInitial,
+    balance: investmentInitial,
+    userId: user.id
+  }
+})
+
+console.log(
+  "Wallets created:",
+  cashWallet.name,
+  bankWallet.name,
+  savingWallet.name,
+  investmentWallet.name
+)
 
   /*
   =================
@@ -188,6 +217,98 @@ console.log("Wallets created:", cashWallet.name, bankWallet.name)
   await prisma.transaction.createMany({
     data: [
 
+      // ===== DECEMBER 2025 =====
+      {
+        amount: 20,
+        type: "expense",
+        description: "Ăn sáng",
+        date: new Date("2025-12-02"),
+        userId: user.id,
+        walletId: cashWallet.id,
+        categoryId: getCategory("Ăn uống")
+      },
+      {
+        amount: 80,
+        type: "expense",
+        description: "Mua đồ gia dụng",
+        date: new Date("2025-12-03"),
+        userId: user.id,
+        walletId: cashWallet.id,
+        categoryId: getCategory("Đồ gia dụng")
+      },
+      {
+        amount: 15,
+        type: "expense",
+        description: "Cafe",
+        date: new Date("2025-12-04"),
+        userId: user.id,
+        walletId: cashWallet.id,
+        categoryId: getCategory("Ăn uống")
+      },
+      {
+        amount: 2000,
+        type: "income",
+        description: "Lương tháng 12",
+        date: new Date("2025-12-01"),
+        userId: user.id,
+        walletId: bankWallet.id,
+        categoryId: getCategory("Lương")
+      },
+      {
+        amount: 100,
+        type: "expense",
+        description: "Mua quà",
+        date: new Date("2025-12-10"),
+        userId: user.id,
+        walletId: bankWallet.id,
+        categoryId: getCategory("Quà tặng & quyên góp")
+      },
+      {
+        amount: 45,
+        type: "expense",
+        description: "Xem phim",
+        date: new Date("2025-12-11"),
+        userId: user.id,
+        walletId: cashWallet.id,
+        categoryId: getCategory("Vui - chơi")
+      },
+      {
+        amount: 30,
+        type: "expense",
+        description: "Internet",
+        date: new Date("2025-12-12"),
+        userId: user.id,
+        walletId: bankWallet.id,
+        categoryId: getCategory("Hóa đơn internet")
+      },
+      {
+        amount: 25,
+        type: "expense",
+        description: "Tiền điện",
+        date: new Date("2025-12-13"),
+        userId: user.id,
+        walletId: bankWallet.id,
+        categoryId: getCategory("Hóa đơn điện")
+      },
+      {
+        amount: 10,
+        type: "expense",
+        description: "Gửi xe",
+        date: new Date("2025-12-15"),
+        userId: user.id,
+        walletId: cashWallet.id,
+        categoryId: getCategory("Di chuyển")
+      },
+      {
+        amount: 60,
+        type: "expense",
+        description: "Mua quần áo",
+        date: new Date("2025-12-18"),
+        userId: user.id,
+        walletId: bankWallet.id,
+        categoryId: getCategory("Đồ dùng cá nhân")
+      },
+
       // ===== JANUARY =====
 
       {
@@ -244,6 +365,96 @@ console.log("Wallets created:", cashWallet.name, bankWallet.name)
         walletId: bankWallet.id,
         categoryId: getCategory("Thu nhập khác")
       },
+      {
+        amount: 12,
+        type: "expense",
+        description: "Cafe",
+        date: new Date("2026-01-07"),
+        userId: user.id,
+        walletId: cashWallet.id,
+        categoryId: getCategory("Ăn uống")
+      },
+      {
+        amount: 50,
+        type: "expense",
+        description: "Gas",
+        date: new Date("2026-01-08"),
+        userId: user.id,
+        walletId: bankWallet.id,
+        categoryId: getCategory("Hóa đơn gas")
+      },
+      {
+        amount: 15,
+        type: "expense",
+        description: "Taxi",
+        date: new Date("2026-01-09"),
+        userId: user.id,
+        walletId: cashWallet.id,
+        categoryId: getCategory("Di chuyển")
+      },
+      {
+        amount: 90,
+        type: "expense",
+        description: "Đồ gia dụng",
+        date: new Date("2026-01-10"),
+        userId: user.id,
+        walletId: bankWallet.id,
+        categoryId: getCategory("Đồ gia dụng")
+      },
+      {
+        amount: 150,
+        type: "expense",
+        description: "Mua giày",
+        date: new Date("2026-01-12"),
+        userId: user.id,
+        walletId: bankWallet.id,
+        categoryId: getCategory("Đồ dùng cá nhân")
+      },
+      {
+        amount: 20,
+        type: "expense",
+        description: "Gym",
+        date: new Date("2026-01-13"),
+        userId: user.id,
+        walletId: cashWallet.id,
+        categoryId: getCategory("Thể dục thể thao")
+      },
+      {
+        amount: 60,
+        type: "expense",
+        description: "Bảo dưỡng xe",
+        date: new Date("2026-01-14"),
+        userId: user.id,
+        walletId: bankWallet.id,
+        categoryId: getCategory("Bảo dưỡng xe")
+      },
+      {
+        amount: 300,
+        type: "income",
+        description: "Freelance",
+        date: new Date("2026-01-18"),
+        userId: user.id,
+        walletId: bankWallet.id,
+        categoryId: getCategory("Thu nhập khác")
+      },
+      {
+        amount: 40,
+        type: "expense",
+        description: "Ăn tối",
+        date: new Date("2026-01-20"),
+        userId: user.id,
+        walletId: cashWallet.id,
+        categoryId: getCategory("Ăn uống")
+      },
+      {
+        amount: 70,
+        type: "expense",
+        description: "Làm đẹp",
+        date: new Date("2026-01-22"),
+        userId: user.id,
+        walletId: bankWallet.id,
+        categoryId: getCategory("Làm đẹp")
+      },
 
       // ===== FEBRUARY =====
 
@@ -282,6 +493,188 @@ console.log("Wallets created:", cashWallet.name, bankWallet.name)
         userId: user.id,
         walletId: bankWallet.id,
         categoryId: getCategory("Thu lãi")
+      },
+      {
+        amount: 18,
+        type: "expense",
+        description: "Cafe sáng",
+        date: new Date("2026-02-06"),
+        userId: user.id,
+        walletId: cashWallet.id,
+        categoryId: getCategory("Ăn uống")
+      },
+      {
+        amount: 20,
+        type: "expense",
+        description: "Taxi",
+        date: new Date("2026-02-07"),
+        userId: user.id,
+        walletId: cashWallet.id,
+        categoryId: getCategory("Di chuyển")
+      },
+      {
+        amount: 35,
+        type: "expense",
+        description: "Ăn trưa",
+        date: new Date("2026-02-08"),
+        userId: user.id,
+        walletId: cashWallet.id,
+        categoryId: getCategory("Ăn uống")
+      },
+      {
+        amount: 25,
+        type: "expense",
+        description: "Internet",
+        date: new Date("2026-02-09"),
+        userId: user.id,
+        walletId: bankWallet.id,
+        categoryId: getCategory("Hóa đơn internet")
+      },
+      {
+        amount: 60,
+        type: "expense",
+        description: "Mua đồ gia dụng",
+        date: new Date("2026-02-10"),
+        userId: user.id,
+        walletId: bankWallet.id,
+        categoryId: getCategory("Đồ gia dụng")
+      },
+      {
+        amount: 40,
+        type: "expense",
+        description: "Xem phim",
+        date: new Date("2026-02-11"),
+        userId: user.id,
+        walletId: cashWallet.id,
+        categoryId: getCategory("Vui - chơi")
+      },
+      {
+        amount: 100,
+        type: "expense",
+        description: "Mua quà",
+        date: new Date("2026-02-12"),
+        userId: user.id,
+        walletId: bankWallet.id,
+        categoryId: getCategory("Quà tặng & quyên góp")
+      },
+      {
+        amount: 220,
+        type: "income",
+        description: "Freelance",
+        date: new Date("2026-02-20"),
+        userId: user.id,
+        walletId: bankWallet.id,
+        categoryId: getCategory("Thu nhập khác")
+      },
+      {
+        amount: 45,
+        type: "expense",
+        description: "Gym",
+        date: new Date("2026-02-21"),
+        userId: user.id,
+        walletId: cashWallet.id,
+        categoryId: getCategory("Thể dục thể thao")
+      },
+      {
+        amount: 30,
+        type: "expense",
+        description: "Tiền điện",
+        date: new Date("2026-02-22"),
+        userId: user.id,
+        walletId: bankWallet.id,
+        categoryId: getCategory("Hóa đơn điện")
+      },
+
+      // ===== MARCH =====
+      {
+        amount: 2000,
+        type: "income",
+        description: "Lương tháng 3",
+        date: new Date("2026-03-01"),
+        userId: user.id,
+        walletId: bankWallet.id,
+        categoryId: getCategory("Lương")
+      },
+      {
+        amount: 25,
+        type: "expense",
+        description: "Ăn sáng",
+        date: new Date("2026-03-02"),
+        userId: user.id,
+        walletId: cashWallet.id,
+        categoryId: getCategory("Ăn uống")
+      },
+      {
+        amount: 35,
+        type: "expense",
+        description: "Ăn trưa",
+        date: new Date("2026-03-03"),
+        userId: user.id,
+        walletId: cashWallet.id,
+        categoryId: getCategory("Ăn uống")
+      },
+      {
+        amount: 20,
+        type: "expense",
+        description: "Cafe",
+        date: new Date("2026-03-04"),
+        userId: user.id,
+        walletId: cashWallet.id,
+        categoryId: getCategory("Ăn uống")
+      },
+      {
+        amount: 80,
+        type: "expense",
+        description: "Mua quần áo",
+        date: new Date("2026-03-05"),
+        userId: user.id,
+        walletId: bankWallet.id,
+        categoryId: getCategory("Đồ dùng cá nhân")
+      },
+      {
+        amount: 40,
+        type: "expense",
+        description: "Internet",
+        date: new Date("2026-03-06"),
+        userId: user.id,
+        walletId: bankWallet.id,
+        categoryId: getCategory("Hóa đơn internet")
+      },
+      {
+        amount: 60,
+        type: "expense",
+        description: "Mua mỹ phẩm",
+        date: new Date("2026-03-07"),
+        userId: user.id,
+        walletId: bankWallet.id,
+        categoryId: getCategory("Làm đẹp")
+      },
+      {
+        amount: 150,
+        type: "income",
+        description: "Thu lãi đầu tư",
+        date: new Date("2026-03-10"),
+        userId: user.id,
+        walletId: bankWallet.id,
+        categoryId: getCategory("Thu lãi")
+      },
+      {
+        amount: 20,
+        type: "expense",
+        description: "Gym",
+        date: new Date("2026-03-12"),
+        userId: user.id,
+        walletId: cashWallet.id,
+        categoryId: getCategory("Thể dục thể thao")
+      },
+      {
+        amount: 70,
+        type: "expense",
+        description: "Mua đồ gia dụng",
+        date: new Date("2026-03-14"),
+        userId: user.id,
+        walletId: bankWallet.id,
+        categoryId: getCategory("Đồ gia dụng")
       }
 
     ]
