@@ -1,9 +1,10 @@
 import { Router } from "express"
-import { updateName, changePassword } from "../controllers/userController"
+import { updateName, changePassword, getMe } from "../controllers/userController"
 import { protect } from "../middleware/authMiddleware"
 
 const router = Router()
 
+router.get("/user/me", protect, getMe)
 router.patch("/user/name", protect, updateName)
 router.patch("/user/password", protect, changePassword)
 
